@@ -24,10 +24,9 @@
 #include <NTL/mat_poly_ZZ.h>
 #include <NTL/ZZXFactoring.h>
 
-#include "../src/Context.h"
-#include "../src/Scheme.h"
-#include "../src/SecretKey.h"
-#include "../src/TimeUtils.h"
+#include "Scheme.h"
+#include "SecretKey.h"
+#include "TimeUtils.h"
 
 #include "matrix.h"
 #include "HEmatrix.h"
@@ -44,6 +43,7 @@ int main() {
     long dim, dim1, dim2;        //! dimension of (square) matrix
     long nbatching;   //! number of multiple matrices in a single ciphertext
     long niter;       //! number of iterations
+    long k;           //! number of shift
     
     while (true)
     {
@@ -70,17 +70,22 @@ int main() {
         cout << "| 10. Parallel Matrix transposition        |" << endl;
         cout << "| 11. Parallel Matrix multiplication       |" << endl;
         cout << "+------------------------------------------+" << endl;
+        cout << "+------------------------------------------+" << endl;
+        cout << "| Extra Examples                           |" << endl;
+        cout << "+------------------------------------------+" << endl;
+        cout << "| 12. Matrix column shift                  |" << endl;
+        cout << "+------------------------------------------+" << endl;
         
         int selection = 0;
         bool invalid = true;
         do
         {
-            cout << endl << "> Run example (1 ~ 11) or exit (0): ";
+            cout << endl << "> Run example (1 ~ 12) or exit (0): ";
             if (!(cin >> selection))
             {
                 invalid = false;
             }
-            else if (selection < 0 || selection > 11)
+            else if (selection < 0 || selection > 12)
             {
                 invalid = false;
             }
@@ -168,6 +173,12 @@ int main() {
                 TestHEmatrix::testSIMDMult(dim, nbatching, niter);  //! square matrix
                 break;
                 
+           case 12:
+                cout << endl << "> Enter a dim & shift value: ";
+                cin >> dim >> k;
+                TestHEmatrix::testShift(dim, k);
+                break;
+
             case 0:
                 return 0;
         }

@@ -7,14 +7,10 @@
 PREFIX = $(HOME)
 CC = g++
 AR = ar
-CFLAGS= -g -O2 -std=c++11 -pthread
+CFLAGS= -g -O2 -std=c++11 -pthread -fPIC
 
-# path to the library files
-LDLIBS  = -L/usr/local/lib -lntl -lgmp -lm  
-
-# link in a library       
-LDFLAGS = -I/usr/local/include      
-LIBS    = -lntl -lm
+INCS = -I./ -I../../HEAAN/HEAAN/src
+LIBS = -L./ -L../../HEAAN/HEAAN/lib -lntl -lm -lgmp -lHEMat -lHEAAN
 
 
 ###############################################################
@@ -23,9 +19,9 @@ LIBS    = -lntl -lm
 #
 ###############################################################
 
-HEADER = matrix.h  HEmatrix.h  TestHEmatrix.h
+HEADER = matrix.h  HEmatrix.h TestHEmatrix.h
 
-SRC = $(HEADER:.h=.cpp)   
+SRC = $(HEADER:.h=.cpp)
 
 OBJ= $(SRC:.cpp=.o)
 
@@ -35,13 +31,11 @@ OBJ= $(SRC:.cpp=.o)
 #  Library
 #
 ###############################################################
-Libheaan: ar rc libheaan.a ../src/*.o
-
-all: libHEMat.a
+all: libHEMat.so
 
 clean:
-	rm *.o libHEMat.a  || echo nothing to clean
-	
+	rm *.o libHEMat.so  || echo nothing to clean
+
 new:
 	make clean
 	make all
@@ -53,17 +47,15 @@ new:
 ###############################################################
 
 test:
-	g++ -std=c++11 -O2 -I/usr/local/include -pthread main.cpp ../src/libheaan.a libHEMat.a -o foo -L/usr/local/lib -lntl -lgmp -lm
+	g++ main.cpp -o foo $(CFLAGS) $(INCS) $(LIBS)
 
 
 obj: $(OBJ)
 
 
 %.o: %.cpp $(HEADER)
-	 $(CC) $(CFLAGS) -c $(LDFLAGS)  $<  
-  
-libHEMat.a: $(OBJ)
-	$(AR) -q libHEMat.a  $(OBJ)
+	 $(CC) $(CFLAGS) -c $(INCS) $<
 
-
-
+libHEMat.so: $(OBJ)
+	gcc -shared -o libHEMat.so $(OBJ)
+	rm *.o

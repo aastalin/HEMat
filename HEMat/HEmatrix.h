@@ -21,15 +21,15 @@
 #include <NTL/xdouble.h>
 #include <NTL/ZZ.h>
 #include "NTL/RR.h"
-#include <NTL/ZZX.h>
 #include "NTL/mat_RR.h"
 #include "NTL/vec_RR.h"
 
-#include "../src/Scheme.h"
-#include "../src/SecretKey.h"
+#include "Scheme.h"
+#include "SecretKey.h"
 
 using namespace std;
 using namespace NTL;
+using namespace heaan;
 
 //! structure for parameters
 typedef struct HEMatpar{
@@ -123,10 +123,24 @@ public:
      */
     void msgrightRotateAndEqual(complex<double>*& vals, long dim, long nrot);
 
+
+    void leftRotateFast_anyK (Ciphertext& res, Ciphertext& cipher, long r);
+
+    void rightRotateFast_anyK(Ciphertext& res, Ciphertext& cipher, long r);
+
+    void leftRotateFastAndEqual_anyK (Ciphertext& cipher, long r);
+
+    void rightRotateFastAndEqual_anyK(Ciphertext& cipher, long r);
+
+
+    void reScaleByAndEqual_HEMat(Ciphertext& cipher, long bitsDown);
+
+    void multAndEqual_HEMat(Ciphertext& cipher1, Ciphertext& cipher2);
+
     /**
      @param[out] transpoly, The polynomials needed for transposition
      */
-    void genTransPoly(ZZX*& transpoly);
+    void genTransPoly(ZZ**& transpoly);
     
     /**
      @param[in] ctxt, The input ciphertext
@@ -134,26 +148,26 @@ public:
      @param[out] res, The output ciphertext that encrypts the transpose of the corresponding input matrix
      consumes a constant-multiplication level
      */
-    void transpose(Ciphertext& res, Ciphertext& ctxt, ZZX*& transpoly);
+    void transpose(Ciphertext& res, Ciphertext& ctxt, ZZ**& transpoly);
     
     /**
      @param[out] transpoly, The polynomials needed for transpositions of multiple matrices
      */
-    void genTransPoly_Parallel(ZZX*& transpoly);
+    void genTransPoly_Parallel(ZZ**& transpoly);
     
     /**
      @param[in] ctxt, The input ciphertext encrypting multiple matrices
      @param[in] transpoly, The polynomials
      @param[out] res, The output ciphertext that encrypts the transpose results of the multiple input matrices
      */
-    void transpose_Parallel(Ciphertext& res, Ciphertext& ctxt, ZZX*& transpoly);
+    void transpose_Parallel(Ciphertext& res, Ciphertext& ctxt, ZZ**& transpoly);
     
     /**
      @param[in] num, The number of steps to shift by columns
      @param[out] shiftpoly, The polynomials needed for column shift by num position
      num = 0: shift by (d-1)
      */
-    void genShiftPoly(ZZX*& shiftpoly, const long num = 0);
+    void genShiftPoly(ZZ**& shiftpoly, const long num = 0);
     
     /**
      @param[in] ctxt, The input ciphertext, Enc(m[0],...m[d-1] | m[d],...m[2d-1] | ... )
@@ -162,12 +176,12 @@ public:
      @param[out] res, The output ciphertext, Enc(m[k] ... m[k-1] | m[d+k]...m[d+k-1] | ... )
      consumes a constant-multiplication level
      */
-    void shiftBycols(Ciphertext& res, Ciphertext& ctxt, long k, ZZX*& shiftpoly);
+    void shiftBycols(Ciphertext& res, Ciphertext& ctxt, long k, ZZ**& shiftpoly);
    
     /**
      @param[out] shiftpoly, The polynomials needed for column shift of multiple matrices
      */
-    void genShiftPoly_Parallel(ZZX*& shiftpoly);
+    void genShiftPoly_Parallel(ZZ**& shiftpoly);
     
     /**
      @param[in] ctxt, The input ciphertext
@@ -175,7 +189,7 @@ public:
      @param[in] shiftpoly, The polynomials for parallel shift-by-column operations
      @param[out] res, The output ciphertext
      */
-    void shiftBycols_Parallel(Ciphertext& res, Ciphertext& ctxt, long k, ZZX*& shiftpoly);
+    void shiftBycols_Parallel(Ciphertext& res, Ciphertext& ctxt, long k, ZZ**& shiftpoly);
     
     
     //-------------------------------------------
@@ -185,17 +199,17 @@ public:
     /**
      @param[out] Initpoly, The polynomials needed for the initial linear transformations to get A[0] and B[0]
      */
-    void genMultPoly(ZZX**& Initpoly);
+    void genMultPoly(ZZ***& Initpoly);
     
     /**
      @param[out] Initpoly, The polynomials needed for the initial linear transformations  
      */
-    void genMultPoly_Parallel(ZZX**& Initpoly);
+    void genMultPoly_Parallel(ZZ***& Initpoly);
     
     /**
      @param[out] Initpoly, The polynomials needed for the initial linear transformations to get B[0]
      */
-    void genMultBPoly(ZZX*& Initpoly);
+    void genMultBPoly(ZZ**& Initpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting a matrix A
@@ -204,7 +218,7 @@ public:
      @param[out] resA, The output ciphertext encrypting a permuated matrix A[0]
      @param[out] resB, The output ciphertext encrypting a permuated matrix B[0]
      */
-    void genInitCtxt(Ciphertext& resA, Ciphertext& resB, Ciphertext& Actxt, Ciphertext& Bctxt, ZZX**& Initpoly);
+    void genInitCtxt(Ciphertext& resA, Ciphertext& resB, Ciphertext& Actxt, Ciphertext& Bctxt, ZZ***& Initpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting multiple matrices As
@@ -213,7 +227,7 @@ public:
      @param[out] resA, The output ciphertext encrypting multiple permuated matrices A[0]'s
      @param[out] resB, The output ciphertext encrypting multiple permuated matrices B[0]'s
      */
-    void genInitCtxt_Parallel(Ciphertext& resA, Ciphertext& resB, Ciphertext& Actxt, Ciphertext& Bctxt, ZZX**& Initpoly);
+    void genInitCtxt_Parallel(Ciphertext& resA, Ciphertext& resB, Ciphertext& Actxt, Ciphertext& Bctxt, ZZ***& Initpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting a matrix A
@@ -226,7 +240,7 @@ public:
      @param[in] Initpoly, The polynomials needed for linear transformations of multiplication
      @param[out] resB, The output ciphertext encrypting a permuted matrix B[0]
      */
-    void genInitBctxt(Ciphertext& resB, Ciphertext& Bctxt, ZZX*& Initpoly);
+    void genInitBctxt(Ciphertext& resB, Ciphertext& Bctxt, ZZ**& Initpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting a wide rectangular matrix A
@@ -250,7 +264,7 @@ public:
      @param[in] shiftpoly, The polynomials for shift-by-column operations
      @param[out] res, The output ciphertext encrypting a matrix (A * B)
      */
-    void HEmatmul(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZX**& Initpoly, ZZX*& shiftpoly);
+    void HEmatmul(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZ***& Initpoly, ZZ**& shiftpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting multiple matrices As
@@ -259,7 +273,7 @@ public:
      @param[in]  shiftpoly, The polynomials for parallel shift-by-column operations
      @param[out] res, The output ciphertext encrypting matrices (As * Bs)
      */
-    void HEmatmul_Parallel(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZX**& Initpoly, ZZX*& shiftpoly);
+    void HEmatmul_Parallel(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZ***& Initpoly, ZZ**& shiftpoly);
     
     /**
      @param[in] Actxt, The input ciphertext encrypting a wide rectangular matrix A (an m*n matrix with m<n)
@@ -268,7 +282,7 @@ public:
      @param[in] shiftpoly, The polynomials for shift-by-column operations
      @param[out] res, The output ciphertext encrypting a matrix (A * B)
      */
-    void HErmatmul(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZX**& Initpoly, ZZX*& shiftpoly);
+    void HErmatmul(Ciphertext& res, Ciphertext& Actxt, Ciphertext& Bctxt, ZZ***& Initpoly, ZZ**& shiftpoly);
     
     /**
      @param[in] Actxts, The input ciphertext encrypting permuted matrices A[i] ("A" are given as fresh ciphertexts)
@@ -276,7 +290,7 @@ public:
      @param[in] Initpoly, The polynomials needed for linear transformations of multiplication
      @param[out] res, The output ciphertext encrypting a matrix (A * B)
      */
-    void HEmatmul_preprocessing(Ciphertext& res, Ciphertext*& Actxts, Ciphertext& Bctxt, ZZX*& Initpoly);
+    void HEmatmul_preprocessing(Ciphertext& res, Ciphertext*& Actxts, Ciphertext& Bctxt, ZZ**& Initpoly);
     
     /**
      @param[in] Actxts, The input ciphertext encrypting permuted matrices A[i] (a rectangular matrix "A" are given as fresh ciphertexts)
@@ -284,7 +298,7 @@ public:
      @param[in] Initpoly, The polynomials needed for linear transformations of multiplication
      @param[out] res, The output ciphertext encrypting a matrix (A * B)
      */
-    void HErmatmul_preprocessing(Ciphertext& res, Ciphertext*& Actxts, Ciphertext& Bctxt, ZZX*& Initpoly);
+    void HErmatmul_preprocessing(Ciphertext& res, Ciphertext*& Actxts, Ciphertext& Bctxt, ZZ**& Initpoly);
 };
 
 

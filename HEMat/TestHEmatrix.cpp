@@ -17,7 +17,6 @@
 #include <NTL/RR.h>
 #include <NTL/xdouble.h>
 #include <NTL/ZZ.h>
-#include <NTL/ZZX.h>
 #include "NTL/RR.h"
 #include "NTL/vec_RR.h"
 #include "NTL/mat_RR.h"
@@ -25,10 +24,9 @@
 #include <NTL/mat_ZZ.h>
 
 
-#include "../src/Context.h"
-#include "../src/Scheme.h"
-#include "../src/SecretKey.h"
-#include "../src/TimeUtils.h"
+#include "Scheme.h"
+#include "SecretKey.h"
+#include "TimeUtils.h"
 
 #include "matrix.h"
 #include "HEmatrix.h"
@@ -52,9 +50,9 @@ void TestHEmatrix::testHEAAN(long logN, long logQ) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
     timeutils.stop("Scheme generation");
@@ -85,8 +83,10 @@ void TestHEmatrix::testHEAAN(long logN, long logQ) {
         cmsg2[i].real(msg2[i]);
     }
     
-    Ciphertext ct1 = scheme.encrypt(cmsg1, nslots, pBits, logQ);
-    Ciphertext ct2 = scheme.encrypt(cmsg2, nslots, pBits, logQ);
+    Ciphertext ct1;
+    Ciphertext ct2;
+    scheme.encrypt(ct1, cmsg1, nslots, pBits, logQ);
+    scheme.encrypt(ct2, cmsg2, nslots, pBits, logQ);
     
 
     auto end = std::chrono::steady_clock::now();
@@ -104,8 +104,8 @@ void TestHEmatrix::testHEAAN(long logN, long logQ) {
     
     start= chrono::steady_clock::now();
     for(long i = 0; i < ntrial; ++i){
-        ctrot = ct1;
-        scheme.leftRotateAndEqual(ctrot, nshift);
+        ctrot.copy(ct1);
+        scheme.leftRotateFastAndEqual(ctrot, nshift);
     }
 
     end = std::chrono::steady_clock::now();
@@ -146,7 +146,7 @@ void TestHEmatrix::testHEAAN(long logN, long logQ) {
     
     start= chrono::steady_clock::now();
     for(long i = 0; i < ntrial; ++i){
-        ctmult = ct1;
+        ctmult.copy(ct1);
         scheme.multAndEqual(ctmult, ct2);
     }
     
@@ -207,9 +207,9 @@ void TestHEmatrix::testEnc(long nrows) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -293,9 +293,9 @@ void TestHEmatrix::testAdd(long nrows) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -402,9 +402,9 @@ void TestHEmatrix::testTrans(long nrows) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -443,7 +443,7 @@ void TestHEmatrix::testTrans(long nrows) {
     //  Transposition
     /*---------------------------------------*/
     
-    ZZX* transpoly;
+    ZZ** transpoly;
     HEmatrix.genTransPoly(transpoly);
     
     Ciphertext Tctxt;
@@ -510,9 +510,9 @@ void TestHEmatrix::testShift(long nrows, long k) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -550,7 +550,7 @@ void TestHEmatrix::testShift(long nrows, long k) {
     //  Transposition
     /*---------------------------------------*/
     
-    ZZX* shiftpoly;
+    ZZ** shiftpoly;
     HEmatrix.genShiftPoly(shiftpoly);
     
     Ciphertext Sctxt;
@@ -613,9 +613,9 @@ void TestHEmatrix::testMult(long nrows) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -662,10 +662,10 @@ void TestHEmatrix::testMult(long nrows) {
     
     start= chrono::steady_clock::now();
     
-    ZZX** Initpoly;
+    ZZ*** Initpoly;
     HEmatrix.genMultPoly(Initpoly);
     
-    ZZX* shiftpoly;
+    ZZ** shiftpoly;
     HEmatrix.genShiftPoly(shiftpoly);
     
     end = std::chrono::steady_clock::now();
@@ -740,9 +740,9 @@ void TestHEmatrix::testRMult(long nrows, long subdim) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -805,10 +805,10 @@ void TestHEmatrix::testRMult(long nrows, long subdim) {
     
     start= chrono::steady_clock::now();
     
-    ZZX** Initpoly;
+    ZZ*** Initpoly;
     HEmatrix.genMultPoly(Initpoly);
     
-    ZZX* shiftpoly;
+    ZZ** shiftpoly;
     HEmatrix.genShiftPoly(shiftpoly);
     
     end = std::chrono::steady_clock::now();
@@ -884,9 +884,9 @@ void TestHEmatrix::testMult_preprocessing(long nrows) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -933,7 +933,7 @@ void TestHEmatrix::testMult_preprocessing(long nrows) {
     
     start= chrono::steady_clock::now();
     
-    ZZX* Initpoly;
+    ZZ** Initpoly;
     HEmatrix.genMultBPoly(Initpoly);
     
     end = std::chrono::steady_clock::now();
@@ -1007,9 +1007,9 @@ void TestHEmatrix::testRMult_preprocessing(long nrows, long subdim) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -1062,7 +1062,7 @@ void TestHEmatrix::testRMult_preprocessing(long nrows, long subdim) {
     
     start= chrono::steady_clock::now();
     
-    ZZX* Initpoly;
+    ZZ** Initpoly;
     HEmatrix.genMultBPoly(Initpoly);
     
     end = std::chrono::steady_clock::now();
@@ -1113,7 +1113,7 @@ void TestHEmatrix::testRMult_preprocessing(long nrows, long subdim) {
 
 void TestHEmatrix::testSIMDAdd(long nrows, long nbatching, const long niter) {
     
-    long logN = 13;
+    long logN = 16;
     
     long ncols = nrows;
     
@@ -1144,9 +1144,9 @@ void TestHEmatrix::testSIMDAdd(long nrows, long nbatching, const long niter) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -1250,7 +1250,7 @@ void TestHEmatrix::testSIMDAdd(long nrows, long nbatching, const long niter) {
 
 void TestHEmatrix::testSIMDTrans(long nrows, long nbatching, const long niter) {
     
-    long logN = 13;
+    long logN = 16;
     
     long ncols = nrows;
     
@@ -1281,9 +1281,9 @@ void TestHEmatrix::testSIMDTrans(long nrows, long nbatching, const long niter) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -1329,7 +1329,7 @@ void TestHEmatrix::testSIMDTrans(long nrows, long nbatching, const long niter) {
         /*---------------------------------------*/
         //  Transpose
         /*---------------------------------------*/
-        ZZX* transpoly;
+        ZZ** transpoly;
         HEmatrix.genTransPoly_Parallel(transpoly);
         
         start= chrono::steady_clock::now();
@@ -1381,7 +1381,7 @@ void TestHEmatrix::testSIMDTrans(long nrows, long nbatching, const long niter) {
 
 void TestHEmatrix::testSIMDMult(long nrows, long nbatching, const long niter) {
     
-    long logN = 13;
+    long logN = 16;
     
     long ncols = nrows;
     
@@ -1412,9 +1412,9 @@ void TestHEmatrix::testSIMDMult(long nrows, long nbatching, const long niter) {
     
     TimeUtils timeutils;
     timeutils.start("Scheme generating...");
-    Context context(logN, logQ);
-    SecretKey secretKey(logN, h);
-    Scheme scheme(secretKey, context);
+    Ring ring;
+    SecretKey secretKey(ring);
+    Scheme scheme(secretKey, ring);
     
     scheme.addLeftRotKeys(secretKey);
     scheme.addRightRotKeys(secretKey);
@@ -1470,10 +1470,10 @@ void TestHEmatrix::testSIMDMult(long nrows, long nbatching, const long niter) {
         
         start= chrono::steady_clock::now();
         
-        ZZX** Initpoly;
+        ZZ*** Initpoly;
         HEmatrix.genMultPoly_Parallel(Initpoly);
         
-        ZZX* shiftpoly;
+        ZZ** shiftpoly;
         HEmatrix.genShiftPoly_Parallel(shiftpoly);
         
         end = std::chrono::steady_clock::now();
